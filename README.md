@@ -123,3 +123,70 @@ NEXT_PUBLIC_API_URL=https://your-new-backend-url.com
 
 - `GET /api/message`: Get the integration message
   - Returns: `{"message": "You've successfully integrated the backend!"}`
+
+
+
+
+
+________________________________________________________________________________________________________________
+
+Cloud Deployment & Infrastructure
+
+As part of this assignment, the application is deployed across two cloud platforms:
+
+Amazon Web Services (AWS) – Region: ap-south-1 (Mumbai)
+
+Google Cloud Platform (GCP) – Region: asia-south1 (Mumbai)
+
+These regions were selected to minimize latency for Indian users and improve API response time and frontend performance.
+
+The backend is containerized before deployment, and infrastructure is provisioned using Terraform.
+
+Environments
+
+Each cloud deployment contains three environments:
+
+dev – minimal resources for development
+
+staging – testing environment similar to production
+
+prod – production-ready environment with scaling and monitoring
+
+Each environment maintains separate infrastructure state to avoid conflicts.
+
+Infrastructure as Code
+
+Terraform is used to provision:
+
+Networking
+
+Compute services
+
+Load balancing
+
+Security configurations
+
+Remote state is configured separately per environment for proper state management and locking.
+
+Architecture Documentation
+
+Detailed architecture design, tradeoffs, scalability strategy, and operational considerations are documented here:
+(Add your Google Docs link here)
+
+Deployment URLs
+
+AWS
+
+Frontend: (Add later)
+
+Backend: (Add later)
+
+GCP
+
+Frontend: (Add later)
+
+Backend: (Add later)
+
+Demo Video
+
+(Add demo video link here)
