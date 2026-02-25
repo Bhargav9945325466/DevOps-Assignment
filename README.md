@@ -190,3 +190,41 @@ Backend: (Add later)
 Demo Video
 
 (Add demo video link here)
+
+________________________________________________________________________________________________________________________________
+
+
+
+Networking & Traffic Flow
+
+The networking architecture separates public and private components to improve security and scalability.
+
+AWS
+
+Frontend is hosted on S3 and delivered via CloudFront.
+
+Backend runs on ECS Fargate inside a private subnet.
+
+An Application Load Balancer (ALB) is placed in a public subnet.
+
+The backend is not directly exposed to the internet.
+
+All external traffic flows through the ALB.
+
+Traffic Flow:
+User → CloudFront → S3 (Frontend)
+User → ALB → ECS → Response
+
+GCP
+
+Frontend is hosted on Cloud Storage and delivered via Cloud CDN.
+
+Backend runs on Cloud Run.
+
+Cloud Run provides a secure HTTPS endpoint.
+
+IAM policies restrict unauthorized access.
+
+Traffic Flow:
+User → Cloud CDN → Cloud Storage
+User → Cloud Run → Response
