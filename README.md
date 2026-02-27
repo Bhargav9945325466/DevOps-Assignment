@@ -132,99 +132,164 @@ ________________________________________________________________________________
 
 Cloud Deployment & Infrastructure
 
-As part of this assignment, the application is deployed across two cloud platforms:
+As part of this assignment, the application is deployed using Amazon Web Services (AWS) for the backend and Vercel for the frontend.
+
+Cloud Platforms Used
 
 Amazon Web Services (AWS) – Region: ap-south-1 (Mumbai)
 
-Google Cloud Platform (GCP) – Region: asia-south1 (Mumbai)
+Vercel – Global Edge Network (Frontend Hosting)
 
-These regions were selected to minimize latency for Indian users and improve API response time and frontend performance.
+The Mumbai region was selected to minimize latency for Indian users and improve backend API response time.
 
-The backend is containerized before deployment, and infrastructure is provisioned using Terraform.
+The backend application is containerized using Docker before deployment to ensure portability, consistency, and environment isolation.
 
 Environments
 
-Each cloud deployment contains three environments:
+Currently implemented:
 
-dev – minimal resources for development
+Production Environment
 
-staging – testing environment similar to production
+For this assignment, a production-ready deployment is implemented.
+The architecture is designed in a way that it can be extended to dev and staging environments in the future by provisioning separate EC2 instances and load balancers.
 
-prod – production-ready environment with scaling and monitoring
+Future improvements:
 
-Each environment maintains separate infrastructure state to avoid conflicts.
+dev – minimal resources for development testing
 
-Infrastructure as Code
+staging – pre-production testing environment
 
-Terraform is used to provision:
+Each environment would ideally maintain separate infrastructure to avoid configuration conflicts.
 
-Networking
+Infrastructure Components (AWS Backend)
 
-Compute services
+The following AWS services are used:
 
-Load balancing
+1. Amazon EC2
 
-Security configurations
+Used to run the backend FastAPI application inside a Docker container.
 
-Remote state is configured separately per environment for proper state management and locking.
+EC2 provides full control over the compute environment and allows Docker-based deployments.
 
-Architecture Documentation
+2. Amazon ECR (Elastic Container Registry)
 
-Detailed architecture design, tradeoffs, scalability strategy, and operational considerations are documented here:
-(Add your Google Docs link here)
+Stores the Docker image of the backend application.
+
+ECR acts as a secure container registry from which EC2 pulls the backend image.
+
+3. Application Load Balancer (ALB)
+
+Routes incoming HTTP traffic to the EC2 instance.
+
+ALB improves scalability and allows future horizontal scaling by attaching multiple EC2 instances.
+It also prevents direct exposure of the EC2 instance.
+
+4. Security Groups
+
+Used as virtual firewalls.
+
+Port 22 → Allowed only from specific IP (SSH access)
+
+Port 80 → Allowed for HTTP traffic via ALB
+
+Security groups ensure controlled and secure access to infrastructure.
+
+5. IAM Role
+
+Attached to EC2 instance.
+
+Allows EC2 to securely pull Docker images from ECR without storing credentials manually.
+
+Deployment Process
+Step 1 – Dockerize Backend
+
+The FastAPI backend is containerized using Docker.
+
+This ensures consistent deployment across environments.
+
+Step 2 – Push Image to ECR
+
+Docker image is tagged and pushed to Amazon ECR.
+
+Step 3 – EC2 Pulls Image
+
+EC2 instance pulls the Docker image from ECR.
+
+Step 4 – Run Container
+
+The container is started using:
+
+docker run -d -p 80:8000 \
+--restart unless-stopped \
+--name backend-container \
+<ecr-image-url>
+
+Port 8000 is internal to the container.
+Port 80 is exposed publicly.
+--restart unless-stopped ensures high availability.
+
+Step 5 – ALB Routing
+
+ALB forwards incoming requests to EC2 instance.
+
+Step 6 – Frontend Deployment (Vercel)
+
+The Next.js frontend is deployed on Vercel.
+
+Vercel automatically builds and deploys the frontend on every GitHub push.
+
+To avoid CORS issues, Vercel rewrite proxy is used:
+
+async rewrites() {
+  return [
+    {
+      source: "/api/:path*",
+      destination: "http://backend-alb-1074945613.ap-south-1.elb.amazonaws.com/:path*",
+    },
+  ];
+}
+
+This ensures the frontend communicates securely with the backend via ALB.
 
 Deployment URLs
+Backend (AWS ALB)
 
-AWS
+http://backend-alb-1074945613.ap-south-1.elb.amazonaws.com/docs
 
-Frontend: (Add later)
+Frontend (Vercel)
 
-Backend: (Add later)
-
-GCP
-
-Frontend: (Add later)
-
-Backend: (Add later)
-
-Demo Video
-
-(Add demo video link here)
-
-________________________________________________________________________________________________________________________________
-
-
+https://dev-ops-assignment-abq1-1wwwsu6v-bhargav-ms-projects-bf83b85a.vercel.app/
 
 Networking & Traffic Flow
 
-The networking architecture separates public and private components to improve security and scalability.
+The networking design ensures separation of concerns and controlled public exposure.
 
-AWS
+Traffic Flow Diagram
 
-Frontend is hosted on S3 and delivered via CloudFront.
+Frontend Flow:
 
-Backend runs on ECS Fargate inside a private subnet.
+User
+→ Vercel (Next.js)
+→ Vercel Rewrite Proxy
+→ AWS ALB
+→ EC2
+→ Docker Container
+→ FastAPI
+→ Response
 
-An Application Load Balancer (ALB) is placed in a public subnet.
+Direct Backend Flow:
 
-The backend is not directly exposed to the internet.
+User
+→ ALB
+→ EC2
+→ Docker
+→ FastAPI
 
-All external traffic flows through the ALB.
+Scalability & Operational Considerations
 
-Traffic Flow:
-User → CloudFront → S3 (Frontend)
-User → ALB → ECS → Response
-
-GCP
-
-Frontend is hosted on Cloud Storage and delivered via Cloud CDN.
-
-Backend runs on Cloud Run.
-
-Cloud Run provides a secure HTTPS endpoint.
-
-IAM policies restrict unauthorized access.
-
-Traffic Flow:
-User → Cloud CDN → Cloud Storage
-User → Cloud Run → Response
+✔ Docker ensures environment consistency
+✔ ALB enables horizontal scaling
+✔ EC2 IAM role improves security
+✔ Security Groups restrict access
+✔ Vercel provides automatic frontend deployment
+✔ Container auto-restarts on failure
