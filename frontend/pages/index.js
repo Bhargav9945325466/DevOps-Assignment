@@ -9,13 +9,14 @@ export default function Home() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // First check if backend is healthy
-        const healthCheck = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/health`);
-        
+        // Health check via Vercel proxy
+        const healthCheck = await axios.get('/api/api/health');
+
         if (healthCheck.data.status === 'healthy') {
           setStatus('Backend is connected!');
-          // Then fetch the message
-          const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/message`);
+          
+          // Fetch message via Vercel proxy
+          const response = await axios.get('/api/api/message');
           setMessage(response.data.message);
         }
       } catch (error) {
@@ -46,7 +47,7 @@ export default function Home() {
           <p>{message}</p>
         </div>
         <div className="info">
-          <p>Backend URL: {process.env.NEXT_PUBLIC_API_URL}</p>
+          <p>Backend URL: Connected via Vercel Proxy</p>
         </div>
       </main>
 
