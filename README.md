@@ -258,7 +258,7 @@ http://backend-alb-1074945613.ap-south-1.elb.amazonaws.com/docs
 
 Frontend (Vercel)
 
-https://dev-ops-assignment-abq1-1wwwsu6v-bhargav-ms-projects-bf83b85a.vercel.app/
+https://dev-ops-assignment-abq1-1vvvwsu6v-bhargav-ms-projects-bf83b85a.vercel.app/
 
 Networking & Traffic Flow
 
