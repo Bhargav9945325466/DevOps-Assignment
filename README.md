@@ -130,166 +130,222 @@ NEXT_PUBLIC_API_URL=https://your-new-backend-url.com
 
 ________________________________________________________________________________________________________________
 
+
 Cloud Deployment & Infrastructure
 
 As part of this assignment, the application is deployed using Amazon Web Services (AWS) for the backend and Vercel for the frontend.
 
 Cloud Platforms Used
 
-Amazon Web Services (AWS) – Region: ap-south-1 (Mumbai)
+Amazon Web Services (AWS)
+Region: ap-south-1 (Mumbai)
 
-Vercel – Global Edge Network (Frontend Hosting)
+Vercel
+Frontend hosting using Vercel Global Edge Network.
 
-The Mumbai region was selected to minimize latency for Indian users and improve backend API response time.
+The Mumbai region was selected to reduce latency for Indian users and improve backend API response time.
 
 The backend application is containerized using Docker before deployment to ensure portability, consistency, and environment isolation.
 
 Environments
-
-Currently implemented:
+Currently Implemented
 
 Production Environment
 
-For this assignment, a production-ready deployment is implemented.
-The architecture is designed in a way that it can be extended to dev and staging environments in the future by provisioning separate EC2 instances and load balancers.
+A production-ready environment is implemented for this assignment.
 
-Future improvements:
+The infrastructure is designed in a way that it can be extended to include additional environments such as:
 
-dev – minimal resources for development testing
+dev (development testing)
 
-staging – pre-production testing environment
+staging (pre-production testing)
 
-Each environment would ideally maintain separate infrastructure to avoid configuration conflicts.
+Each environment can be deployed on separate EC2 instances to avoid configuration conflicts.
 
 Infrastructure Components (AWS Backend)
 
-The following AWS services are used:
+The backend infrastructure consists of the following AWS services:
 
-1. Amazon EC2
+1️⃣ Amazon EC2
 
-Used to run the backend FastAPI application inside a Docker container.
+Amazon EC2 is used to host the backend FastAPI application.
 
-EC2 provides full control over the compute environment and allows Docker-based deployments.
+Ubuntu 22.04 LTS is installed
 
-2. Amazon ECR (Elastic Container Registry)
+Docker is installed on the EC2 instance
 
-Stores the Docker image of the backend application.
+The FastAPI backend runs inside a Docker container
 
-ECR acts as a secure container registry from which EC2 pulls the backend image.
+Public IP is used to access the backend
 
-3. Application Load Balancer (ALB)
+EC2 provides full control over the compute environment and allows container-based deployment.
 
-Routes incoming HTTP traffic to the EC2 instance.
+2️⃣ Amazon ECR (Elastic Container Registry)
 
-ALB improves scalability and allows future horizontal scaling by attaching multiple EC2 instances.
-It also prevents direct exposure of the EC2 instance.
+Amazon ECR is used to store the Docker image of the backend application.
 
-4. Security Groups
+GitHub Actions builds the Docker image
 
-Used as virtual firewalls.
+The image is pushed automatically to ECR
 
-Port 22 → Allowed only from specific IP (SSH access)
+EC2 pulls the image from ECR during deployment
 
-Port 80 → Allowed for HTTP traffic via ALB
+ECR acts as a secure private container registry.
 
-Security groups ensure controlled and secure access to infrastructure.
+3️⃣ Security Groups
 
-5. IAM Role
+Security Groups act as virtual firewalls for the EC2 instance.
 
-Attached to EC2 instance.
+Configured rules:
 
-Allows EC2 to securely pull Docker images from ECR without storing credentials manually.
+Port 22 → Allowed from specific IP (for SSH access)
+
+Port 8000 → Allowed for public API access
+
+Security groups ensure controlled and secure infrastructure access.
+
+4️⃣ IAM Role
+
+An IAM role is attached to the EC2 instance.
+
+This allows EC2 to securely pull Docker images from ECR without storing AWS credentials on the server.
+
+This improves security and avoids manual credential management.
+
+CI/CD Implementation
+
+A complete CI/CD pipeline is implemented using GitHub Actions.
+
+Continuous Integration (CI)
+
+On every push to the main branch:
+
+GitHub Actions builds the Docker image.
+
+The image is tagged.
+
+The image is pushed to Amazon ECR.
+
+This ensures every code change creates a fresh deployable container image.
+
+Continuous Deployment (CD)
+
+After the image is pushed to ECR:
+
+EC2 pulls the latest image from ECR.
+
+Existing container is stopped (if running).
+
+A new container is started automatically.
+
+This ensures automatic backend updates without manual SSH deployment.
+
+Verified successfully by modifying the API message and observing automatic production update.
 
 Deployment Process
 Step 1 – Dockerize Backend
 
 The FastAPI backend is containerized using Docker.
 
-This ensures consistent deployment across environments.
+This ensures consistent behavior across environments.
 
-Step 2 – Push Image to ECR
+Step 2 – Push Image to ECR (CI)
 
-Docker image is tagged and pushed to Amazon ECR.
+GitHub Actions automatically:
 
-Step 3 – EC2 Pulls Image
+Builds Docker image
 
-EC2 instance pulls the Docker image from ECR.
+Tags image
+
+Pushes image to ECR
+
+Step 3 – EC2 Pulls Image (CD)
+
+EC2 pulls the latest Docker image from ECR.
 
 Step 4 – Run Container
 
-The container is started using:
+The backend container is started using:
 
-docker run -d -p 80:8000 \
+docker run -d -p 8000:8000 \
 --restart unless-stopped \
 --name backend-container \
 <ecr-image-url>
 
-Port 8000 is internal to the container.
-Port 80 is exposed publicly.
---restart unless-stopped ensures high availability.
+Port 8000 is exposed publicly
 
-Step 5 – ALB Routing
+--restart unless-stopped ensures container auto-restarts on failure
 
-ALB forwards incoming requests to EC2 instance.
-
-Step 6 – Frontend Deployment (Vercel)
+Frontend Deployment (Vercel)
 
 The Next.js frontend is deployed on Vercel.
 
-Vercel automatically builds and deploys the frontend on every GitHub push.
+Features:
 
-To avoid CORS issues, Vercel rewrite proxy is used:
+Automatic deployment on every GitHub push
+
+Global CDN distribution
+
+Zero server management
+
+To avoid CORS issues, a Vercel rewrite proxy is configured:
 
 async rewrites() {
   return [
     {
       source: "/api/:path*",
-      destination: "http://backend-alb-1074945613.ap-south-1.elb.amazonaws.com/:path*",
+      destination: "http://65.2.31.189:8000/:path*",
     },
   ];
 }
 
-This ensures the frontend communicates securely with the backend via ALB.
+This ensures the frontend communicates seamlessly with the backend without CORS errors.
 
 Deployment URLs
-Backend (AWS ALB)
-
-http://backend-alb-1074945613.ap-south-1.elb.amazonaws.com/docs
-
+Backend (AWS EC2)
+http://65.2.31.189:8000/docs
 Frontend (Vercel)
-
 https://dev-ops-assignment-abq1-1vvvwsu6v-bhargav-ms-projects-bf83b85a.vercel.app/
-
 Networking & Traffic Flow
-
-The networking design ensures separation of concerns and controlled public exposure.
-
-Traffic Flow Diagram
-
-Frontend Flow:
+Frontend Request Flow
 
 User
 → Vercel (Next.js)
 → Vercel Rewrite Proxy
-→ AWS ALB
-→ EC2
+→ EC2 Public IP
 → Docker Container
 → FastAPI
 → Response
 
-Direct Backend Flow:
+Direct Backend Flow
 
 User
-→ ALB
-→ EC2
+→ EC2 Public IP
 → Docker
 → FastAPI
 
 Scalability & Operational Considerations
 
 ✔ Docker ensures environment consistency
-✔ ALB enables horizontal scaling
-✔ EC2 IAM role improves security
-✔ Security Groups restrict access
-✔ Vercel provides automatic frontend deployment
+✔ GitHub Actions enables automated CI/CD
+✔ Amazon ECR securely stores images
+✔ IAM role improves security
+✔ Security Groups restrict unauthorized access
 ✔ Container auto-restarts on failure
+✔ Vercel provides automatic frontend deployment
+
+Conclusion
+
+This architecture demonstrates a production-ready cloud deployment using:
+
+Containerization (Docker)
+
+CI/CD automation (GitHub Actions)
+
+Cloud hosting (AWS EC2)
+
+Container registry (ECR)
+
+Frontend hosting (Vercel)
+
+The pipeline ensures that every code push automatically builds, pushes, and deploys the backend application without manual intervention.
