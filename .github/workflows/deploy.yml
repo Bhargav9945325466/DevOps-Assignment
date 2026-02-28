@@ -1,33 +1,12 @@
-name: Build and Push to ECR
-
-on:
-  push:
-    branches:
-      - main
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-south-1
-
-      - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build Docker image
-        run: docker build -t dev-backend ./backend
-
-      - name: Tag Docker image
-        run: docker tag dev-backend:latest 143471984431.dkr.ecr.ap-south-1.amazonaws.com/dev-backend:latest
-
-      - name: Push Docker image
-        run: docker push 143471984431.dkr.ecr.ap-south-1.amazonaws.com/dev-backend:latest
+- name: Deploy to EC2
+  uses: appleboy/ssh-action@v1.0.3
+  with:
+    host: ${{ secrets.EC2_HOST }}
+    username: ubuntu
+    key: ${{ secrets.EC2_SSH_KEY }}
+    script: |
+      docker pull 143471984431.dkr.ecr.ap-south-1.amazonaws.com/dev-backend:latest
+      docker stop backend || true
+      docker rm backend || true
+      docker run -d -p 8000:8000 --name backend --restart always \
+        143471984431.dkr.ecr.ap-south-1.amazonaws.com/dev-backend:latest
